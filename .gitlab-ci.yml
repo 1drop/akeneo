@@ -7,6 +7,6 @@ build:
     - docker push 1drop/akeneo:${AKENEO_VERSION}
   only:
     variables:
-      - AKENEO_VERSION
+      - $AKENEO_VERSION
   tags:
     - docker
