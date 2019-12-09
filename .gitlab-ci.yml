@@ -1,3 +1,6 @@
+services:
+  - docker:dind
+
 build:
   image: docker
   before_script:
