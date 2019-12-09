@@ -1,0 +1,93 @@
+version: '3.7'
+
+services:
+  akeneo:
+    build:
+      context: docker
+      args:
+        AKENEO_VERSION: 3.2.23
+    depends_on:
+      - database
+      - mail
+      - elasticsearch
+    environment:
+      VIRTUAL_HOST: akeneo.docker
+      VIRTUAL_PORT: 80
+      POSTFIX_RELAYHOST: "[mail]:1025"
+      APP_MAILER_URL: "smtp://mail:1025"
+      APP_URL: "http://akeneo.docker"
+      DB_HOST: "database"
+      DB_PORT: "3306"
+      DB_NAME: "akeneo"
+      DB_USER: "akeneo"
+      DB_PASSWORD: "akeneo"
+      ES_HOSTS: "elasticsearch:9200"
+  worker:
+    build:
+      context: docker
+      args:
+        AKENEO_VERSION: 3.2.23
+    depends_on:
+      - database
+      - mail
+      - elasticsearch
+    command: "worker"
+    environment:
+      POSTFIX_RELAYHOST: "[mail]:1025"
+      APP_MAILER_URL: "smtp://mail:1025"
+      APP_URL: "http://akeneo.docker"
+      DB_HOST: "database"
+      DB_PORT: "3306"
+      DB_NAME: "akeneo"
+      DB_USER: "akeneo"
+      DB_PASSWORD: "akeneo"
+      ES_HOSTS: "elasticsearch:9200"
+
+  database:
+    image: mysql:5.7
+    environment:
+      MYSQL_USER: akeneo
+      MYSQL_PASSWORD: akeneo
+      MYSQL_ROOT_PASSWORD: akeneo
+      MYSQL_DATABASE: akeneo
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - 33306:3306
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.5.4
+    volumes:
+      - elastic:/usr/share/elasticsearch/data/
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      discovery.type: single-node
+  es-sysctl:
+    privileged: true
+    image: rawmind/alpine-sysctl:0.1
+    environment:
+      SYSCTL_KEY: vm.max_map_count
+      SYSCTL_VALUE: 262144
+  kopf:
+    image: dylanmei/cerebro
+    command:
+      - bin/cerebro
+      - -Dhosts.0.host=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    environment:
+      VIRTUAL_HOST: cerebro.docker
+      VIRTUAL_PORT: 9000
+
+  mail:
+    image: mailhog/mailhog
+    environment:
+      VIRTUAL_HOST: mailhog.docker
+      VIRTUAL_PORT: 8025
+
+volumes:
+  db:
+    driver: local
+  elastic:
+    driver: local
