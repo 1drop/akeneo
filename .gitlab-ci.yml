@@ -6,7 +6,7 @@ build:
   before_script:
     - docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
   script:
-    - docker build -t 1drop/akeneo:${AKENEO_VERSION} docker
+    - docker build --build-arg AKENEO_VERSION=${AKENEO_VERSION} -t 1drop/akeneo:${AKENEO_VERSION} docker
     - docker push 1drop/akeneo:${AKENEO_VERSION}
   only:
     variables:
