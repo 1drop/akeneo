@@ -8,3 +8,5 @@ build:
   only:
     variables:
       - AKENEO_VERSION
+  tags:
+    - docker
